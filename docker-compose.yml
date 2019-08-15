@@ -1,0 +1,12 @@
+version: "3.4"
+
+services:
+  app:
+    image: "climbcomp/climbcomp-go:${DOCKER_TAG:-latest}"
+    build:
+      args:
+        - VERSION=unknown
+      context: "."
+      target: "${DOCKER_TARGET:-dev}"
+    volumes:
+      - ".:/go/src/app"
