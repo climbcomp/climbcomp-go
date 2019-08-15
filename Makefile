@@ -4,7 +4,7 @@ version := $(shell cat VERSION)
 
 .PHONY: build
 build:
-	docker-compose build --build-arg VERSION=$(version)
+	docker-compose build --build-arg VERSION=$(version) app
 
 .PHONY: test
 test:
