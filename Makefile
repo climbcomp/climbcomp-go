@@ -12,7 +12,7 @@ test:
 
 .PHONY: release
 release:
-	@echo "TODO"
+	docker-compose run --rm app ./scripts/release
 
 # local targets
 

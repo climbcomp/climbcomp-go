@@ -9,3 +9,5 @@ script:
   - make build
   - make test
   - make release
+
+if: tag IS blank

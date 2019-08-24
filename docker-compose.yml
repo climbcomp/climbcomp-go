@@ -8,5 +8,10 @@ services:
         - VERSION=unknown
       context: "."
       target: "${DOCKER_TARGET:-dev}"
+    environment:
+      - GH_TOKEN
+      - TRAVIS_BRANCH
+      - TRAVIS_PULL_REQUEST
+      - TRAVIS_REPO_SLUG
     volumes:
       - ".:/go/src/app"
