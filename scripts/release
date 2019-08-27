@@ -14,6 +14,29 @@ REPO_URL="https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git"
 VERSION="$(cat ./VERSION | xargs)"
 GIT_TAG="v${VERSION}"
 
+# Additional commits may have been pushed in between the time Travis
+# was notified and when it cloned. Travis clones in detatched HEAD mode to work
+# around this, but we plan on returning to $TRAVIS_BRANCH so we can commit
+# version changes. Guard against this explicitly.
+function ensure-branch-matches-head {
+    local head_ref
+    local branch_ref
+    head_ref=$(git rev-parse HEAD)
+    if [ "${head_ref}" == "" ]; then
+        echo " -> Failed to get HEAD reference!"
+        return 1
+    fi
+    branch_ref=$(git rev-parse "${TRAVIS_BRANCH}")
+    if [ "${branch_ref}" == "" ]; then
+        echo "-> Failed to get ${TRAVIS_BRANCH} reference!"
+        return 1
+    fi
+    if [ "${head_ref}" != "${branch_ref}" ]; then
+        echo " -> HEAD ref (${head_ref}) does not match ${TRAVIS_BRANCH} ref (${branch_ref})!"
+        return 1
+    fi
+}
+
 function ensure-branch-is-master {
     if [ "${TRAVIS_BRANCH}" != "master" ]; then
         echo " -> TRAVIS_BRANCH is not master: ${TRAVIS_BRANCH}"
@@ -38,6 +61,8 @@ function ensure-not-already-tagged {
 }
 
 function update-version-src {
+    echo " -> Checking out ${TRAVIS_BRANCH}"
+    git checkout "${TRAVIS_BRANCH}"
     echo " -> Updating ${VERSION_SRC_PATH} to ${VERSION}"
     sed -i.bak "s/VERSION = \"[^\"]*\"/VERSION = \"${VERSION}\"/" "${VERSION_SRC_PATH}"
     rm -f "${VERSION_SRC_PATH}.bak"
@@ -54,13 +79,14 @@ function configure-git {
 }
 
 function commit-and-push {
+    echo " -> Checking for changes"
     git add -N .
     if ! git diff --exit-code > /dev/null; then
         echo " -> Committing changes"
         git add .
         git commit -m "chore(release): ${VERSION} [skip ci]"
         echo " -> Pushing changes"
-        git push -q "${REPO_URL}" > /dev/null 2>&1
+        git push -q "${REPO_URL}" "${TRAVIS_BRANCH}" > /dev/null 2>&1
     else
         echo " -> No changes to commit"
     fi
