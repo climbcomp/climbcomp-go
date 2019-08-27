@@ -9,9 +9,7 @@ RUN mkdir -p /go/src/app
 WORKDIR /go/src/app
 COPY . .
 
-ARG VERSION=unknown
 RUN go build -v \
-    -ldflags="-X 'main.Version=${VERSION}'" \
     -o /usr/local/bin/climbcomp \
     .
 CMD ["/usr/local/bin/climbcomp"]

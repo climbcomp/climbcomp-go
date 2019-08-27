@@ -2,14 +2,11 @@ package main
 
 import (
 	"fmt"
-)
 
-var (
-	// Version of climbcomp-proto
-	Version string
+	"github.com/climbcomp/climbcomp-go/climbcomp"
 )
 
 func main() {
-	msg := fmt.Sprintf("Climbcomp CLI v%v", Version)
+	msg := fmt.Sprintf("Climbcomp CLI v%v", climbcomp.VERSION)
 	fmt.Println(msg)
 }

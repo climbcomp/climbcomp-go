@@ -7,44 +7,67 @@ GH_TOKEN=${GH_TOKEN:?} # Required
 TRAVIS_BRANCH=${TRAVIS_BRANCH:-$CURRENT_BRANCH}
 TRAVIS_PULL_REQUEST=${TRAVIS_PULL_REQUEST:-false}
 TRAVIS_REPO_SLUG=${TRAVIS_REPO_SLUG:?} # Required
+VERSION_SRC_PATH=${VERSION_SRC_PATH:?}
 
 REPO_URL="https://${GH_TOKEN}@github.com/${TRAVIS_REPO_SLUG}.git"
 # shellcheck disable=SC2002
 VERSION="$(cat ./VERSION | xargs)"
 GIT_TAG="v${VERSION}"
 
-
 function ensure-branch-is-master {
     if [ "${TRAVIS_BRANCH}" != "master" ]; then
-        echo "TRAVIS_BRANCH is not master: ${TRAVIS_BRANCH}"
+        echo " -> TRAVIS_BRANCH is not master: ${TRAVIS_BRANCH}"
         exit 0
     fi
 }
 
 function ensure-not-pull-request {
     if [ "${TRAVIS_PULL_REQUEST}" != "false" ]; then
-        echo "TRAVIS_PULL_REQUEST is not false: ${TRAVIS_PULL_REQUEST}"
+        echo " -> TRAVIS_PULL_REQUEST is not false: ${TRAVIS_PULL_REQUEST}"
         exit 0
     fi
 }
 
 function ensure-not-already-tagged {
-    echo "Fetching latest tags..."
+    echo " -> Fetching latest tags"
     git fetch --tags "${REPO_URL}" > /dev/null 2>&1
     if [ "$(git tag -l "${GIT_TAG}")" != "" ]; then
-        echo "Tag already exists: ${GIT_TAG}"
+        echo " -> Tag already exists: ${GIT_TAG}"
         exit 0
     fi
 }
 
-function create-git-tag {
+function update-version-src {
+    echo " -> Updating ${VERSION_SRC_PATH} to ${VERSION}"
+    sed -i.bak "s/VERSION = \"[^\"]*\"/VERSION = \"${VERSION}\"/" "${VERSION_SRC_PATH}"
+    rm -f "${VERSION_SRC_PATH}.bak"
+}
+
+function configure-git {
+    echo " -> Configuring git user"
     if [ "$(git config user.email)" == "" ]; then
         git config user.email "travis@travis-ci.org"
     fi
     if [ "$(git config user.name)" == "" ]; then
         git config user.name "Travis CI"
     fi
-    echo "Tagging new version: ${GIT_TAG}"
+}
+
+function commit-and-push {
+    git add -N .
+    if ! git diff --exit-code > /dev/null; then
+        echo " -> Committing changes"
+        git add .
+        git commit -m "chore(release): ${VERSION} [skip ci]"
+        echo " -> Pushing changes"
+        git push -q "${REPO_URL}" > /dev/null 2>&1
+    else
+        echo " -> No changes to commit"
+    fi
+}
+
+function create-git-tag {
+    echo " -> Tagging new version: ${GIT_TAG}"
     git tag -a "${GIT_TAG}" -m "Release of version ${VERSION}"
     git push -q "${REPO_URL}" --tags > /dev/null 2>&1
 }
@@ -53,4 +76,9 @@ function create-git-tag {
 ensure-branch-is-master
 ensure-not-pull-request
 ensure-not-already-tagged
+
+update-version-src
+
+configure-git
+commit-and-push
 create-git-tag

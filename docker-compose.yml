@@ -4,8 +4,6 @@ services:
   app:
     image: "climbcomp/climbcomp-go:${DOCKER_TAG:-latest}"
     build:
-      args:
-        - VERSION=unknown
       context: "."
       target: "${DOCKER_TARGET:-dev}"
     environment:
@@ -13,5 +11,6 @@ services:
       - TRAVIS_BRANCH
       - TRAVIS_PULL_REQUEST
       - TRAVIS_REPO_SLUG
+      - VERSION_SRC_PATH=./climbcomp/climbcomp.go
     volumes:
       - ".:/go/src/app"
