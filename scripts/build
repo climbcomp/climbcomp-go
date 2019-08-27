@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# shellcheck disable=SC2002
+VERSION="$(cat ./VERSION | xargs)"
+VERSION_SRC_PATH="./climbcomp/climbcomp.go"
+
+./scripts/update-version "${VERSION}" "${VERSION_SRC_PATH}"
+
+go build -v -o /usr/local/bin/climbcomp .
